@@ -12,3 +12,8 @@ Initialize project
 ### git config --global user.email carlos_jaimito@yahoo.com.br
 
 ### npm install --save express mongoose express-validator multer dotenv cors morgan body-parser bcryptjs jsonwebtoken moment 
+
+### npm install -g nodemon
+
+Run project
+### nodemon
