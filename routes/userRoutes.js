@@ -18,7 +18,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 // url: http://localhost:500/api/users/
 // method: GET
 router.get(
-    '/', 
+    '/',
     (req, res) => {
         return res.status(200).json(
             {
@@ -34,38 +34,75 @@ router.get(
 // Access: public
 // url: http://localhost:500/api/users/
 // method: POST
- 
+
 router.post(
     '/register',
     [
-    //check empty fields
-       check('username').not().isEmpty().trim().escape(),
-       check('password').not().isEmpty().trim().escape(),
+        //check empty fields
+        check('username').not().isEmpty().trim().escape(),
+        check('password').not().isEmpty().trim().escape(),
 
-    //check email
-    check('email').isEmail().normalizeEmail()
+        //check email
+        check('email').isEmail().normalizeEmail()
     ],
-    (req, res) => {  
+    (req, res) => {
         const errors = validationResult(req);
 
         // check errors is not empty
-        if(!errors.isEmpty()) {
+        if (!errors.isEmpty()) {
             return res.status(400).json({
                 "status": false,
                 "errors": errors.array()
             });
         }
 
-        const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(req.body.password, salt);
-        //console.log(hashedPassword);
+        // check email already exists or not
+        User.findOne({ email: req.body.email }).then(user => {
 
-        return res.status(200).json({ 
-            "status" : true,
-            "data" : req.body,
-            "hashedPassword" : hashedPassword
+            // check user
+            if (user) {
+                return res.status(409).json({
+                    "status": true,
+                    "message": "User email already exists"
+                });
+            } else {
+
+                // hash user password
+                const salt = bcrypt.genSaltSync(10);
+                const hashedPassword = bcrypt.hashSync(req.body.password, salt);
+
+                // create user object from user model
+                const newUser = new User({
+                    email: req.body.email,
+                    username: req.body.username,
+                    password: hashedPassword,
+                });
+
+                // insert new user
+                newUser.save().then(result => {
+
+                    return res.status(200).json({
+                        "status": true,
+                        "user": result
+                    });
+
+                }).catch((error) => {
+
+                    return res.status(502).json({
+                        "status": false,
+                        "error": error
+                    });
+                });
+            }
+
+        }).catch(error => {
+            return res.status(502).json({
+                "status": false,
+                "error": error
+            });
         });
-      }
+
+    }
 );
 
 
